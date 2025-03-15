@@ -43,7 +43,7 @@ def send_image(path: Path):
             client.files_upload_v2(
                 file=image,
                 filename=path.name,
-                channels=CHANNEL,
+                channel=CHANNEL,
             )
     except SlackApiError as e:
         # You will get a SlackApiError if "ok" is False
