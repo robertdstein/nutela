@@ -92,3 +92,6 @@ extension-pkg-whitelist=["pydantic"]
 
 [tool.pylint.typecheck]
 generated-members=["u.*"]
+
+[project.scripts]
+nutela-start = "nutela.listener:start_listener"

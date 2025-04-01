@@ -1,10 +1,12 @@
 import pydantic
-from pydantic.dataclasses import dataclass
-from pydantic import BaseModel, ValidationError, field_validator, ValidationInfo
 from astropy.time import Time
+from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
+from pydantic.dataclasses import dataclass
+
 
 class AstrotrackNotice(BaseModel):
     """IceCube AstroTrack GCN Notice."""
+
     title: str
     notice_date: str
     notice_type: str
@@ -20,28 +22,28 @@ class AstrotrackNotice(BaseModel):
     energy: float
     signalness: float
     far: float
-    sun_dist: str
+    sun_dist: float
     sun_postn: float
-    moon_dist: str
+    moon_dist: float
     moon_postn: float
     gal_coords: str
     ecl_coords: str
     comments: str
     revision: int
 
-    @field_validator("src_ra", "src_dec", "moon_postn", "sun_postn", mode='before')
+    @field_validator("src_ra", "src_dec", "sun_postn", "moon_postn", mode="before")
     @classmethod
     def coord_validator(cls, value: str) -> float:
         v = float(value.split("d")[0])
         return v
 
-    @field_validator('signalness', 'energy', 'far', mode='before')
+    @field_validator("signalness", "energy", "far", mode="before")
     @classmethod
     def float_validator(cls, value: str) -> float:
         signalness = float(value.split(" ")[0])
         return signalness
 
-    @field_validator('src_error', 'src_error50', mode='before')
+    @field_validator("src_error", "src_error50", mode="before")
     @classmethod
     def src_error_validator(cls, value: str) -> float:
         """
@@ -50,8 +52,14 @@ class AstrotrackNotice(BaseModel):
         :param value: Source error string
         :return: Degrees
         """
-        src_error = float(value.split(" ")[0])/60.
+        src_error = float(value.split(" ")[0]) / 60.0
         return src_error
+
+    @field_validator("moon_dist", "sun_dist", mode="before")
+    @classmethod
+    def distance_validator(cls, value: str) -> float:
+        dist = abs(float(value.split(" ")[0]))
+        return dist
 
     @property
     def event_time(self) -> Time:
@@ -60,6 +68,8 @@ class AstrotrackNotice(BaseModel):
 
         :return: Time object
         """
-        date = self.discovery_date.split(';')[-1].split("(")[0].strip().replace("/", "-")
-        time = self.discovery_time.split('{')[1].split("}")[0].strip()
-        return Time(f'20{date}T{time}', format='isot')
+        date = (
+            self.discovery_date.split(";")[-1].split("(")[0].strip().replace("/", "-")
+        )
+        time = self.discovery_time.split("{")[1].split("}")[0].strip()
+        return Time(f"20{date}T{time}", format="isot")
