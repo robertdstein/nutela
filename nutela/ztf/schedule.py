@@ -1,19 +1,18 @@
-from astroplan import Schedule
 from astropy import units as u
 from astropy.time import Time
 from planobs.models import ObservingConstraints
 
 from nutela.notice import AstrotrackNotice
 from nutela.slack import send_image, send_message
-from nutela.ztf import get_planner
 from nutela.ztf.submit import submit_ztf
+from nutela.ztf.utils import get_planner
 
 BASE_CONSTRAINTS_KWARGS = {
     "site_name": "Palomar",
 }
 
 
-def schedule_ztf(nu: AstrotrackNotice):
+def schedule_ztf(nu: AstrotrackNotice, debug: bool = False):
     """
     Schedule a ZTF observation for a neutrino notice.
 
@@ -21,14 +20,14 @@ def schedule_ztf(nu: AstrotrackNotice):
     :return: None
     """
     if nu.revision == 0:
-        schedule_revision_0(nu)
+        schedule_revision_0(nu, debug=debug)
     elif nu.revision == 1:
-        schedule_revision_1(nu)
+        schedule_revision_1(nu, debug=debug)
     else:
         send_message(f"Unrecognised revision {nu.revision}, for notice {nu}")
 
 
-def schedule_revision_0(nu: AstrotrackNotice):
+def schedule_revision_0(nu: AstrotrackNotice, debug: bool = False):
     """
     Build a plan for revision 0 of the notice.
 
@@ -37,13 +36,15 @@ def schedule_revision_0(nu: AstrotrackNotice):
     """
     plan = get_planner(nu)
 
-    plan.request_ztf_fields()
+    all_fields = plan.request_ztf_fields()
     plan.plot_ztf_fields()
 
+    for field_id in all_fields:
+        best_field_path = plan.grid_plot_path(fieldid=field_id)
+        send_image(best_field_path)
+
     best_field = plan.recommended_field
-    send_message(f"Best ZTF field is {best_field}")
-    best_field_path = plan.grid_plot_path(fieldid=best_field)
-    send_image(best_field_path)
+    send_message(f"Best ZTF field is {best_field}, options were {all_fields}")
 
     constraints = ObservingConstraints(
         bands=["g", "r"], exposure_time=300.0, **BASE_CONSTRAINTS_KWARGS
@@ -54,10 +55,10 @@ def schedule_revision_0(nu: AstrotrackNotice):
         send_message(f"No observable fields: {schedule.rejection_reason}")
         return
 
-    submit_ztf(schedule.observations, nu, field_id=best_field)
+    submit_ztf(schedule.observations, nu, field_id=best_field, debug=debug)
 
 
-def schedule_revision_1(nu: AstrotrackNotice):
+def schedule_revision_1(nu: AstrotrackNotice, debug: bool = False):
     """
     Build a plan for revision 1 of the notice.
 
@@ -96,4 +97,4 @@ def schedule_revision_1(nu: AstrotrackNotice):
         )
         all_obs += plan.generate_schedule(constraints=constraints).observations
 
-    submit_ztf(all_obs, nu, field_id=best_field)
+    submit_ztf(all_obs, nu, field_id=best_field, debug=debug)

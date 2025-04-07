@@ -1,4 +1,3 @@
-from astropy.time import Time
 from planobs.api import Queue
 from planobs.models import Observation, TooTarget
 
@@ -12,11 +11,19 @@ ZTF_FILTER_IDS = {
 }
 
 
-def submit_ztf(observations: list[Observation], nu: AstrotrackNotice, field_id: int):
+def submit_ztf(
+    observations: list[Observation],
+    nu: AstrotrackNotice,
+    field_id: int,
+    debug: bool = False,
+):
     """
     Submit a ZTF schedule to the ZTF scheduler.
 
     :param observations
+    :param nu: GCN Notice
+    :param field_id: Field ID
+    :param debug: Debug mode
     :return: None
     """
     base_name = f"ToO_IC_{nu.run_num}_{nu.event_num}_rev{nu.revision}"
@@ -25,7 +32,7 @@ def submit_ztf(observations: list[Observation], nu: AstrotrackNotice, field_id: 
 
     existing_triggers = [x for x in q.get_all_queues_nameonly() if base_name in x]
 
-    if len(existing_triggers) > 0:
+    if (len(existing_triggers) > 0) & (not debug):
         send_message(
             f"Found {len(existing_triggers)} triggers, will delete these before submitting new ones"
         )
@@ -47,4 +54,10 @@ def submit_ztf(observations: list[Observation], nu: AstrotrackNotice, field_id: 
             ],
         )
 
-    send_message(f"Sending {q.get_triggers()} triggers to ZTF queue")
+    if debug:
+        send_message(
+            f"DEBUG MODE, not submitting. \n Would submit {q.get_triggers()} triggers to ZTF queue"
+        )
+    else:
+        send_message(f"Sending {q.get_triggers()} triggers to ZTF queue")
+        q.submit_queue()

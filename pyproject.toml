@@ -11,7 +11,7 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     'Programming Language :: Python :: 3.10',
@@ -30,12 +30,14 @@ classifiers = [
 ]
 dependencies = [
     "winterapi>=1.5.0",
-    "planobs>=0.8.0",
+    "planobs@git+https://github.com/robertdstein/planobs@nutela",
     "gcn-kafka",
     "dotenv",
+    "nuwinter@git+https://github.com/robertdstein/nuwinter",
 #    "slackclient",
     "pydantic>=2.0.0",
-    "slack_sdk"
+    "slack_sdk",
+    "tabulate",
 ]
 [project.optional-dependencies]
 dev = [

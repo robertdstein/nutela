@@ -1,13 +1,17 @@
+import argparse
 import os
+import time
 
 import dotenv
+from anyio import sleep
 from astropy import units as u
 from astropy.time import Time
 from gcn_kafka import Consumer
 
 from nutela.parse import parse_gcn_notice
 from nutela.slack import send_message
-from nutela.ztf import schedule_ztf, select_alerts_ztf
+from nutela.winter import post_winter_queue, schedule_winter, select_alerts_winter
+from nutela.ztf import post_ztf_queue, schedule_ztf, select_alerts_ztf
 
 
 def start_listener():
@@ -17,11 +21,29 @@ def start_listener():
     :return:
     """
 
+    args = argparse.ArgumentParser()
+    args.add_argument(
+        "--load-recent",
+        action="store_true",
+        help="Enable debug mode",
+        default=False,
+    )
+    args.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode",
+        default=False,
+    )
+
+    res = args.parse_args()
+
     dotenv.load_dotenv()
 
     latest_status = Time.now()
 
     send_message(f"Switching on at {latest_status} UTC")
+    post_ztf_queue()
+    post_winter_queue()
 
     try:
 
@@ -36,6 +58,8 @@ def start_listener():
             client_id=client_id, client_secret=client_secret, config=config
         )
 
+        t_start = Time.now()
+
         # # Subscribe to topics and receive alerts
         consumer.subscribe(
             [
@@ -48,6 +72,7 @@ def start_listener():
             if Time.now() - latest_status > 1 * u.day:
                 latest_status = Time.now()
                 send_message(f"Still active at {latest_status} UTC")
+                post_winter_queue()
 
             for message in consumer.consume(timeout=1):
                 if message.error():
@@ -61,7 +86,15 @@ def start_listener():
 
                 nu_time = nu.event_time
 
-                message = (
+                age = (t_start - nu_time).to(u.day).value
+
+                if (age > 7) | ((not res.load_recent) and (age > 0.0)):
+                    send_message(
+                        f"Skipping {nu_time.isot} as it is {age:.1f} days relative to tstart"
+                    )
+                    continue
+
+                message_str = (
                     f"Found neutrino at time {nu_time.isot}, of type {nu.notice_type}, "
                     f"and energy {nu.energy:.0f} TeV. "
                     f"Revision is {nu.revision}. \n"
@@ -72,12 +105,36 @@ def start_listener():
                     f"with uncertainty radius of {nu.src_error:.2f} degrees."
                 )
 
-                send_message(message)
+                send_message(message_str)
+
+                send_message("Scheduling ZTF")
 
                 valid_ztf = select_alerts_ztf(nu=nu)
 
                 if valid_ztf:
-                    schedule_ztf(nu=nu)
+                    schedule_ztf(nu=nu, debug=res.debug)
+
+                post_ztf_queue()
+
+                time.sleep(10.0)
+
+                send_message("Scheduling WINTER")
+
+                valid_winter = select_alerts_winter(nu=nu)
+
+                if valid_winter:
+                    schedule_winter(nu=nu, debug=res.debug)
+
+                else:
+                    send_message("Not valid for WINTER")
+
+                post_winter_queue()
+
+                time.sleep(10.0)
+
+                send_message(
+                    f"Finished scheduling neutrino at time {nu_time.isot} (revision {nu.revision})"
+                )
 
     finally:
         send_message(f"Disconnecting at {Time.now()} UTC")

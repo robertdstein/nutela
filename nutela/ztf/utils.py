@@ -8,12 +8,30 @@ from planobs.models import Localisation
 from planobs.plan import PlanObservation
 from slack import WebClient  # type: ignore
 
+from nutela.notice import AstrotrackNotice
 from nutela.slack import CHANNEL, client
 
 SITE_ZTF = "Palomar"
 
 
-def get_planner(nu) -> PlanObservation:
+def get_localisation(nu: AstrotrackNotice) -> Localisation:
+    """
+    Convert a neutrino notice into a localisation object.
+
+    :param nu:
+    :return:
+    """
+    localisation = Localisation.from_circle(
+        ra=nu.src_ra,
+        dec=nu.src_dec,
+        err_radius=nu.src_error,
+        signalness=nu.signalness,
+        trigger_time=nu.event_time,
+    )
+    return localisation
+
+
+def get_planner(nu: AstrotrackNotice) -> PlanObservation:
     """
     Convert a neutrino notice into a plan for observation.
 
@@ -31,13 +49,7 @@ def get_planner(nu) -> PlanObservation:
 
     base_name = f"IC{ic_date_name[2:].replace('-','')}+{fractional_day:.3f}"
 
-    localisation = Localisation.from_circle(
-        ra=nu.src_ra,
-        dec=nu.src_dec,
-        err_radius=nu.src_error,
-        signalness=nu.signalness,
-        trigger_time=nu.event_time,
-    )
+    localisation = get_localisation(nu=nu)
 
     plan = PlanObservation(
         name=base_name,
