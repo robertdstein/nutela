@@ -16,6 +16,13 @@ def check_winter_program():
     :return: None
     """
     winter = WinterAPI()
+
+    try:
+        print(f"User is {winter.get_user()}")
+    except KeyError:
+        print("No user credentials found. Please add these first!")
+        winter.add_user_details(overwrite=True)
+
     program_list = winter.get_programs()
     print(f"Available programs: {program_list}")
 
