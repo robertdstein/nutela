@@ -26,9 +26,13 @@ def submit_winter(tiles, nights, nu: AstrotrackNotice, debug: bool = False):
 
     winter = WinterAPI()
 
-    api_res, api_schedule = winter.submit_too(
-        program_name=WINTER_PROGRAM_NAME, data=too_list, submit_trigger=(not debug)
-    )
+    try:
+        api_res, api_schedule = winter.submit_too(
+            program_name=WINTER_PROGRAM_NAME, data=too_list, submit_trigger=(not debug)
+        )
+    except ValueError as e:
+        send_message(f"Error submitting to Winter: {e}")
+        return
 
     try:
         send_message(api_res.json()["msg"])
