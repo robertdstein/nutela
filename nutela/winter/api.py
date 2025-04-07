@@ -46,4 +46,18 @@ def post_winter_queue():
     """
     winter = WinterAPI()
     res, queue = winter.get_observatory_queue(program_name=WINTER_PROGRAM_NAME)
-    send_message(f"WINTER queue:\n {tabulate(queue)} \n")
+    queue.drop(columns=["target_names", "prog_name"], inplace=True)
+
+    # try:
+    #     too_names = []
+    #     for row in queue["target_names"]:
+    #         all_names = [x.split("rev") for x in row]
+    #         joins = ["rev".join([x[0], x[1][0]]) for x in all_names]
+    #         name = list(set(joins))[0]
+    #         too_names.append(name)
+    #     queue.drop(columns=["target_names", "prog_name"], inplace=True)
+    #     queue["too_name"] = too_names
+    # except (KeyError, ValueError, TypeError, IndexError):
+    #     pass
+
+    send_message(f"WINTER queue:\n ```{tabulate(queue, headers=queue.columns)}``` \n")

@@ -19,6 +19,11 @@ def select_alerts_ztf(nu: AstrotrackNotice) -> bool:
     plan.plot_schedule(schedule, constraints=plan.constraints)
     plt.close()
 
+    if not schedule:
+        print(plan.constraints)
+        raise
+        plan.generate_schedule(constraints=plan.constraints)
+
     send_image(plan.output_png_path)
 
     send_message(

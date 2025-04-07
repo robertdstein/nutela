@@ -25,13 +25,13 @@ def plan_tiling(
         t_start = t_now + offset
         t_end = t_start + 7.0
 
-        for _, row in fields_df.iterrows():
+        for k, row in fields_df.iterrows():
 
             kwargs = {
                 "target_priority": neutrino_priority,
                 "start_time_mjd": t_start,
                 "end_time_mjd": t_end,
-                "target_name": f"{nu_name}_{j}",
+                "target_name": f"{nu_name}_{j}_{k}",
                 "use_best_detector": False,
                 "filters": ["J"],
             }

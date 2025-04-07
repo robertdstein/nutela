@@ -11,7 +11,7 @@ def post_ztf_queue():
     """
     q = Queue(user="NUTELA")
 
-    all_queues = q.get_all_queues()
+    all_queues = q.get_too_queues()
     df = pd.DataFrame([x for x in all_queues["data"]])
     df.drop(columns=["queue"], inplace=True)
-    send_message(f"ZTF queue: \n {tabulate(df)} \n")
+    send_message(f"ZTF ToO queue: \n ```{tabulate(df, headers=df.columns)}``` \n")

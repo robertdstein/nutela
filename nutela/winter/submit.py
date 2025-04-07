@@ -18,7 +18,7 @@ def submit_winter(tiles, nights, nu: AstrotrackNotice, debug: bool = False):
     :return: None
     """
 
-    name = f"ToO_IC_{nu.run_num}_{nu.event_num}_rev{nu.revision}"
+    name = f"IC_{nu.run_num}_{nu.event_num}_rev{nu.revision}"
 
     too_list = plan_tiling(nights, tiles, nu_name=name)
 

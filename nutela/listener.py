@@ -133,7 +133,7 @@ def start_listener():
                 time.sleep(10.0)
 
                 send_message(
-                    f"Finished scheduling neutrino at time {nu_time.isot} (revision {nu.revision})"
+                    f"Finished scheduling neutrino detected at time {nu_time.isot}UT (revision {nu.revision})"
                 )
 
     finally:
