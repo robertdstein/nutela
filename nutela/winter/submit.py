@@ -9,7 +9,7 @@ from nutela.winter.api import WINTER_PROGRAM_NAME
 from nutela.winter.plan import plan_tiling
 
 
-def submit_winter(tiles, nights, nu: AstrotrackNotice, debug: bool = False):
+def submit_winter(tiles, nights, nu: AstrotrackNotice, debug: bool = False, **kwargs):
     """
     Submit the Winter tiles to the Winter system.
 
@@ -21,7 +21,7 @@ def submit_winter(tiles, nights, nu: AstrotrackNotice, debug: bool = False):
 
     name = f"IC_{nu.run_num}_{nu.event_num}_rev{nu.revision}"
 
-    too_list = plan_tiling(nights, tiles, nu_name=name)
+    too_list = plan_tiling(nights, tiles, nu_name=name, **kwargs)
 
     send_message(f"Submitting {len(too_list)} observations to Winter")
 

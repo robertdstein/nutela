@@ -7,7 +7,7 @@ neutrino_priority = 150.0
 
 
 def plan_tiling(
-    nights: list[float], fields_df: pd.DataFrame, nu_name: str
+    nights: list[float], fields_df: pd.DataFrame, nu_name: str, **kwargs
 ) -> list[WinterRaDecToO]:
     """
     Plan the tiling for the neutrino observation.
@@ -27,7 +27,7 @@ def plan_tiling(
 
         for k, row in fields_df.iterrows():
 
-            kwargs = {
+            args = {
                 "target_priority": neutrino_priority,
                 "start_time_mjd": t_start,
                 "end_time_mjd": t_end,
@@ -35,8 +35,9 @@ def plan_tiling(
                 "use_best_detector": False,
                 "filters": ["J"],
             }
+            args.update(kwargs)
 
-            too_request = WinterRaDecToO(ra_deg=row["RA"], dec_deg=row["Dec"], **kwargs)
+            too_request = WinterRaDecToO(ra_deg=row["RA"], dec_deg=row["Dec"], **args)
 
             too_requests.append(too_request)
 

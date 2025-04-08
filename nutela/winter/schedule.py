@@ -11,6 +11,10 @@ from nutela.winter.tile import get_tiles
 NIGHTS_REV0 = [0.0, 0.0]
 NIGHTS_REV1 = [1.0, 7.0]
 
+KWARGS_REV1 = {
+    "max_airmass": 3.0,
+}
+
 
 def schedule_winter(nu: AstrotrackNotice, debug: bool = False):
     """
@@ -33,6 +37,7 @@ def base_schedule(
     nights: list[float],
     debug: bool = False,
     mode: str | None = None,
+    **kwargs,
 ):
     """
     Build a plan for the notice.
@@ -51,7 +56,7 @@ def base_schedule(
         plt.savefig(path)
         send_image(path)
 
-    submit_winter(tiles, nights=nights, nu=nu, debug=debug)
+    submit_winter(tiles, nights=nights, nu=nu, debug=debug, **kwargs)
 
 
 def schedule_revision_0(nu: AstrotrackNotice, debug: bool = False):
@@ -74,4 +79,4 @@ def schedule_revision_1(nu: AstrotrackNotice, debug: bool = False):
     :param debug: Debug flag
     :return: None
     """
-    base_schedule(nu, nights=NIGHTS_REV1, debug=debug)
+    base_schedule(nu, nights=NIGHTS_REV1, debug=debug, **KWARGS_REV1)
