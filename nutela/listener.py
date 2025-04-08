@@ -3,7 +3,6 @@ import os
 import time
 
 import dotenv
-from anyio import sleep
 from astropy import units as u
 from astropy.time import Time
 from gcn_kafka import Consumer
@@ -23,16 +22,23 @@ def start_listener():
 
     args = argparse.ArgumentParser()
     args.add_argument(
-        "--load-recent",
+        "--debug",
         action="store_true",
         help="Enable debug mode",
         default=False,
     )
     args.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug mode",
-        default=False,
+        "-t",
+        "--time",
+        default=None,
+        type=str,
+        help="The time of neutrino e.g 2024-01-01T00:00:00",
+    )
+    args.add_argument(
+        "--rev",
+        default=0,
+        type=int,
+        help="The revision of the neutrino",
     )
 
     res = args.parse_args()
@@ -45,6 +51,8 @@ def start_listener():
     post_ztf_queue()
     post_winter_queue()
 
+    t_match = Time(res.time, format="isot") if res.time is not None else None
+
     try:
 
         client_id, client_secret = os.getenv("GCN_ID"), os.getenv("GCN_SECRET")
@@ -52,13 +60,11 @@ def start_listener():
         if client_id is None or client_secret is None:
             raise ValueError("Missing GCN_ID or GCN_SECRET in .env file")
 
-        config = {"auto.offset.reset": "earliest"}  # FIXME
+        config = {"auto.offset.reset": "earliest"} if res.time else {}
 
         consumer = Consumer(
             client_id=client_id, client_secret=client_secret, config=config
         )
-
-        t_start = Time.now()
 
         # # Subscribe to topics and receive alerts
         consumer.subscribe(
@@ -69,9 +75,11 @@ def start_listener():
         )
 
         while True:
+
             if Time.now() - latest_status > 1 * u.day:
                 latest_status = Time.now()
                 send_message(f"Still active at {latest_status} UTC")
+                post_ztf_queue()
                 post_winter_queue()
 
             for message in consumer.consume(timeout=1):
@@ -80,17 +88,17 @@ def start_listener():
                     continue
                 # Print the topic and message ID
                 print(f"topic={message.topic()}, offset={message.offset()}")
-                value = message.value()
                 nu = parse_gcn_notice(message)
-                print(nu)
 
                 nu_time = nu.event_time
 
-                age = (t_start - nu_time).to(u.day).value
-
-                if (age > 7) | ((not res.load_recent) and (age > 0.0)):
+                # allow option to re-trigger on particular time and revision
+                if t_match is not None and (
+                    (nu_time != t_match) | (nu.revision != res.rev)
+                ):
                     send_message(
-                        f"Skipping {nu_time.isot} as it is {age:.1f} days relative to tstart"
+                        f"Skipping neutrino at time {nu_time.isot} (rev {nu.revision}) "
+                        f"as it does not match the provided time {t_match.isot} (rev {res.rev})"
                     )
                     continue
 
@@ -116,7 +124,7 @@ def start_listener():
 
                 post_ztf_queue()
 
-                time.sleep(10.0)
+                time.sleep(5.0)
 
                 send_message("Scheduling WINTER")
 
@@ -130,11 +138,22 @@ def start_listener():
 
                 post_winter_queue()
 
-                time.sleep(10.0)
+                time.sleep(5.0)
 
                 send_message(
                     f"Finished scheduling neutrino detected at time {nu_time.isot}UT (revision {nu.revision})"
                 )
+
+                # Terminate after matching time and revision
+                if t_match is not None and (
+                    (nu_time == t_match) | (nu.revision == res.rev)
+                ):
+                    send_message(
+                        f"Stopping listener after processing neutrino at time {nu_time.isot} (rev {nu.revision})"
+                    )
+                    raise
+
+                time.sleep(5.0)
 
     finally:
         send_message(f"Disconnecting at {Time.now()} UTC")

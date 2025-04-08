@@ -1,7 +1,6 @@
-import pydantic
+import numpy as np
 from astropy.time import Time
-from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, field_validator
 
 
 class AstrotrackNotice(BaseModel):
@@ -73,3 +72,21 @@ class AstrotrackNotice(BaseModel):
         )
         time = self.discovery_time.split("{")[1].split("}")[0].strip()
         return Time(f"20{date}T{time}", format="isot")
+
+    @property
+    def area(self) -> float:
+        """
+        Calculate the area of the error circle in square degrees.
+
+        :return: Area in square degrees
+        """
+        return np.pi * (self.src_error**2)
+
+    @property
+    def area_square(self) -> float:
+        """
+        Calculate the area of the error circle in square degrees.
+
+        :return: Area in square degrees
+        """
+        return 4.0 * self.src_error**2.0

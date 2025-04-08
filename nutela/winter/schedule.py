@@ -28,23 +28,26 @@ def schedule_winter(nu: AstrotrackNotice, debug: bool = False):
         send_message(f"Unrecognised revision {nu.revision}, for notice {nu}")
 
 
-def base_schedule(nu: AstrotrackNotice, nights: list[float], debug: bool = False):
+def base_schedule(
+    nu: AstrotrackNotice,
+    nights: list[float],
+    debug: bool = False,
+    mode: str | None = None,
+):
     """
     Build a plan for the notice.
 
     :param nu: Neutrino notice
     :param nights: List of nights to observe
     :param debug: Debug flag
+    :param mode: Tiling mode for the observation
     :return: None
     """
-
     # Send the tiles
     with tempfile.TemporaryDirectory() as tmpdirname:
-        print("created temporary directory", tmpdirname)
         plt.figure()
-        tiles, ax = get_tiles(nu)
+        tiles, ax = get_tiles(nu, mode=mode)
         path = Path(tmpdirname) / "winter_tiles.png"
-        print("Saving tiles to", path)
         plt.savefig(path)
         send_image(path)
 
@@ -54,12 +57,13 @@ def base_schedule(nu: AstrotrackNotice, nights: list[float], debug: bool = False
 def schedule_revision_0(nu: AstrotrackNotice, debug: bool = False):
     """
     Build a plan for revision 0 of the notice.
+    Always do a 2x2 square tiling.
 
     :param nu: Neutrino notice
     :param debug: Debug flag
     :return: None
     """
-    base_schedule(nu, nights=NIGHTS_REV0, debug=debug)
+    base_schedule(nu, nights=NIGHTS_REV0, debug=debug, mode="square")
 
 
 def schedule_revision_1(nu: AstrotrackNotice, debug: bool = False):

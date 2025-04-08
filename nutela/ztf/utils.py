@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# Author: Simeon Reusch (simeon.reusch@desy.de)
-# License: BSD-3-Clause
 from astropy import units as u  # type: ignore
 from astropy.coordinates import EarthLocation  # type: ignore
 from astropy.time import Time  # type: ignore
@@ -9,7 +6,6 @@ from planobs.plan import PlanObservation
 from slack import WebClient  # type: ignore
 
 from nutela.notice import AstrotrackNotice
-from nutela.slack import CHANNEL, client
 
 SITE_ZTF = "Palomar"
 
@@ -31,11 +27,12 @@ def get_localisation(nu: AstrotrackNotice) -> Localisation:
     return localisation
 
 
-def get_planner(nu: AstrotrackNotice) -> PlanObservation:
+def get_planner(nu: AstrotrackNotice, temp_dir) -> PlanObservation:
     """
     Convert a neutrino notice into a plan for observation.
 
     :param nu: Neutrino Notice
+    :param temp_dir: Temporary directory for the plan
     :return: PlanObs
     """
 
@@ -54,5 +51,6 @@ def get_planner(nu: AstrotrackNotice) -> PlanObservation:
     plan = PlanObservation(
         name=base_name,
         localisation=localisation,
+        base_output_dir=temp_dir,
     )
     return plan

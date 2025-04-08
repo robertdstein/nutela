@@ -1,9 +1,8 @@
+import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 from planobs.models import ObservingConstraints
-from planobs.plan import PlanObservation
-from planobs.slackbot import Slackbot
 
 from nutela.notice import AstrotrackNotice
 from nutela.slack import CHANNEL, client, send_image, send_message
@@ -16,6 +15,8 @@ BASE_CONSTRAINTS_KWARGS = {
     "exposure_time": 8.0 * 120.0,
 }
 
+MAX_AREA_WINTER = 8.0
+
 
 def select_alerts_winter(nu: AstrotrackNotice) -> bool:
     """
@@ -25,15 +26,23 @@ def select_alerts_winter(nu: AstrotrackNotice) -> bool:
     :return: Boolean whether trigger criteria is met
     """
 
-    plan = get_planner(nu=nu)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        plan = get_planner(nu, temp_dir=tmpdirname)
 
-    constraints = ObservingConstraints(**BASE_CONSTRAINTS_KWARGS)
+        constraints = ObservingConstraints(**BASE_CONSTRAINTS_KWARGS)
 
-    schedule = plan.generate_schedule(constraints=constraints)
-    plan.plot_schedule(schedule, constraints=constraints)
-    plt.close()
+        schedule = plan.generate_schedule(constraints=constraints)
+        plan.plot_schedule(schedule, constraints=constraints)
+        plt.close()
+        send_image(plan.output_png_path)
 
-    send_image(plan.output_png_path)
+    # Reject if the area is too large
+    if nu.area_square > MAX_AREA_WINTER:
+        send_message(
+            f"Neutrino area ({nu.area_square:.1f} sq deg) is larger than maximum "
+            f"({MAX_AREA_WINTER:.1f} sq deg), skipping winter observation."
+        )
+        return False
 
     send_message(
         f"Neutrino galactic latitude is {plan.coordinates_galactic.b.deg:.1f}, "

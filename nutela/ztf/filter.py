@@ -1,3 +1,5 @@
+import tempfile
+
 import matplotlib.pyplot as plt
 
 from nutela.notice import AstrotrackNotice
@@ -13,18 +15,17 @@ def select_alerts_ztf(nu: AstrotrackNotice) -> bool:
     :return: Boolean whether trigger criteria is met
     """
 
-    plan = get_planner(nu=nu)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plan = get_planner(nu=nu, temp_dir=tmpdir)
 
-    schedule = plan.generate_schedule(constraints=plan.constraints)
-    plan.plot_schedule(schedule, constraints=plan.constraints)
-    plt.close()
+        schedule = plan.generate_schedule(constraints=plan.constraints)
+        plan.plot_schedule(schedule, constraints=plan.constraints)
+        plt.close()
 
-    if not schedule:
-        print(plan.constraints)
-        raise
-        plan.generate_schedule(constraints=plan.constraints)
+        if not schedule:
+            plan.generate_schedule(constraints=plan.constraints)
 
-    send_image(plan.output_png_path)
+        send_image(plan.output_png_path)
 
     send_message(
         f"Neutrino galactic latitude is {plan.coordinates_galactic.b.deg:.1f}, "

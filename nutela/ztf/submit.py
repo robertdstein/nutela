@@ -1,5 +1,7 @@
+import pandas as pd
 from planobs.api import Queue
 from planobs.models import Observation, TooTarget
+from tabulate import tabulate
 
 from nutela.notice import AstrotrackNotice
 from nutela.slack import send_message
@@ -9,6 +11,35 @@ ZTF_FILTER_IDS = {
     "r": 2,
     "i": 3,
 }
+
+
+def format_planobs_queue(res: list[dict]) -> pd.DataFrame:
+    """
+    Format the planobs queue for display.
+
+    :param res: ZTF queue response
+    :return: DataFrame of the ZTF queue
+    """
+    triggers = []
+    for x in res:
+        data = x[1]
+        data.update(**data["targets"][0])
+        triggers.append(data)
+
+    df = pd.DataFrame(triggers)
+    df.drop(
+        columns=[
+            "user",
+            "queue_type",
+            "targets",
+            "subprogram_name",
+            "request_id",
+            "program_pi",
+            "program_id",
+        ],
+        inplace=True,
+    )
+    return df
 
 
 def submit_ztf(
@@ -54,10 +85,14 @@ def submit_ztf(
             ],
         )
 
+    df = format_planobs_queue(q.get_triggers())
+
+    str_table = f"\n ```{tabulate(df, headers=df.columns)}``` \n"
+
     if debug:
         send_message(
-            f"DEBUG MODE, not submitting. \n Would submit {q.get_triggers()} triggers to ZTF queue"
+            f"DEBUG MODE, not submitting. \n Would submit triggers to ZTF queue: {str_table}"
         )
     else:
-        send_message(f"Sending {q.get_triggers()} triggers to ZTF queue")
+        send_message(f"Sending triggers to ZTF queue: {str_table}")
         q.submit_queue()
