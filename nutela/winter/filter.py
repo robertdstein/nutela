@@ -1,11 +1,14 @@
+"""
+This module contains the function to filter neutrino alerts for winter observations.
+"""
+
 import tempfile
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 from planobs.models import ObservingConstraints
 
 from nutela.notice import AstrotrackNotice
-from nutela.slack import CHANNEL, client, send_image, send_message
+from nutela.slack import send_image, send_message
 from nutela.ztf.utils import get_planner
 
 BASE_CONSTRAINTS_KWARGS = {

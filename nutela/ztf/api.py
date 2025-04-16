@@ -1,3 +1,7 @@
+"""
+Module to interact with the ZTF queue.
+"""
+
 import json
 
 import pandas as pd
@@ -24,8 +28,10 @@ def format_ztf_queue(res: list[dict]) -> pd.DataFrame:
 
     df = pd.DataFrame(triggers)
     if len(df) > 0:
-        df = df[
-            [
+
+        cols = [
+            x
+            for x in [
                 "queue_name",
                 "validity_window_mjd",
                 "is_TOO",
@@ -35,7 +41,9 @@ def format_ztf_queue(res: list[dict]) -> pd.DataFrame:
                 "exposure_time",
                 "max_airmass",
             ]
+            if x in df.columns
         ]
+        df = df[cols]
     return df
 
 
