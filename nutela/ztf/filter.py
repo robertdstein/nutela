@@ -6,6 +6,8 @@ from nutela.notice import AstrotrackNotice
 from nutela.slack import send_image, send_message
 from nutela.ztf.utils import get_planner
 
+MAX_AREA_ZTF = 10.0
+
 
 def select_alerts_ztf(nu: AstrotrackNotice) -> bool:
     """
@@ -26,6 +28,14 @@ def select_alerts_ztf(nu: AstrotrackNotice) -> bool:
             plan.generate_schedule(constraints=plan.constraints)
 
         send_image(plan.output_png_path)
+
+    # Reject if the area is too large
+    if nu.area_square > MAX_AREA_ZTF:
+        send_message(
+            f"Neutrino area ({nu.area_square:.1f} sq deg) is larger than maximum "
+            f"({MAX_AREA_ZTF:.1f} sq deg), skipping ZTF observation."
+        )
+        return False
 
     send_message(
         f"Neutrino galactic latitude is {plan.coordinates_galactic.b.deg:.1f}, "
