@@ -4,6 +4,7 @@ Module to check the Winter neutrino program and its queue.
 
 import os
 
+import pandas as pd
 from tabulate import tabulate
 from winterapi import WinterAPI
 
@@ -42,18 +43,29 @@ def check_winter_program():
 check_winter_program()
 
 
+def get_winter_queue() -> pd.DataFrame:
+    """
+    Get Winter neutrino program and its queue.
+
+    :return:
+    """
+    winter = WinterAPI()
+    _, queue = winter.get_observatory_queue(program_name=WINTER_PROGRAM_NAME)
+    if len(queue) > 0:
+        queue.drop(columns=["target_names", "prog_name"], inplace=True)
+    return queue
+
+
 def post_winter_queue():
     """
     Get the queue of the Winter neutrino program.
 
     :return: None
     """
-    winter = WinterAPI()
-    _, queue = winter.get_observatory_queue(program_name=WINTER_PROGRAM_NAME)
+    queue = get_winter_queue()
 
     if len(queue) == 0:
         send_message("No observations in the Winter queue.")
         return
 
-    queue.drop(columns=["target_names", "prog_name"], inplace=True)
     send_message(f"WINTER queue:\n ```{tabulate(queue, headers=queue.columns)}``` \n")

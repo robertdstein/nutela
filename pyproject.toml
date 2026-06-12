@@ -34,7 +34,6 @@ dependencies = [
     "gcn-kafka",
     "dotenv",
     "nuwinter@git+https://github.com/robertdstein/nuwinter",
-#    "slackclient",
     "pydantic>=2.0.0",
     "slack_sdk",
     "tabulate",
@@ -46,6 +45,7 @@ dev = [
     "isort == 5.13.2",
     "pylint == 3.2.2",
     "coveralls",
+    "jupyter"
 ]
 
 [project.urls]

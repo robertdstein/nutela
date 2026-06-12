@@ -1,3 +1,7 @@
+"""
+Script to schedule a ZTF observation for a neutrino notice.
+"""
+
 import pandas as pd
 from planobs.api import Queue
 from planobs.models import Observation, TooTarget
@@ -45,7 +49,7 @@ def format_planobs_queue(res: list[dict]) -> pd.DataFrame:
 def submit_ztf(
     observations: list[Observation],
     nu: AstrotrackNotice,
-    field_id: int,
+    field_id: int | list[int],
     debug: bool = False,
 ):
     """
@@ -65,25 +69,30 @@ def submit_ztf(
 
     if (len(existing_triggers) > 0) & (not debug):
         send_message(
-            f"Found {len(existing_triggers)} triggers, will delete these before submitting new ones"
+            f"Found {len(existing_triggers)} triggers, "
+            f"will delete these before submitting new ones"
         )
         for trigger in existing_triggers:
             q.delete_trigger(trigger)
 
+    if not isinstance(field_id, list):
+        field_id = [field_id]
+
     for obs in observations:
-        q.add_trigger_to_queue(
-            trigger_name=f"{base_name}",
-            validity_window_start_mjd=obs.start_time.mjd,
-            validity_window_end_mjd=obs.end_time.mjd,
-            targets=[
-                TooTarget(
-                    field_id=field_id,
-                    filter_id=ZTF_FILTER_IDS[obs.filter_name],
-                    exposure_time=obs.exposure_time,
-                    program_pi="Stein",
-                )
-            ],
-        )
+        for fid in field_id:
+            q.add_trigger_to_queue(
+                trigger_name=f"{base_name}",
+                validity_window_start_mjd=obs.start_time.mjd,
+                validity_window_end_mjd=obs.end_time.mjd,
+                targets=[
+                    TooTarget(
+                        field_id=fid,
+                        filter_id=ZTF_FILTER_IDS[obs.filter_name],
+                        exposure_time=obs.exposure_time,
+                        program_pi="Stein",
+                    )
+                ],
+            )
 
     df = format_planobs_queue(q.get_triggers())
 
@@ -91,7 +100,8 @@ def submit_ztf(
 
     if debug:
         send_message(
-            f"DEBUG MODE, not submitting. \n Would submit triggers to ZTF queue: {str_table}"
+            f"DEBUG MODE, not submitting. \n "
+            f"Would submit triggers to ZTF queue: {str_table}"
         )
     else:
         send_message(f"Sending triggers to ZTF queue: {str_table}")

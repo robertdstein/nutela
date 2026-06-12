@@ -47,15 +47,24 @@ def format_ztf_queue(res: list[dict]) -> pd.DataFrame:
     return df
 
 
-def post_ztf_queue():
+def get_ztf_queue() -> pd.DataFrame:
     """
-    Post the queue to Kowalski
+    Get the ZTF queue for display
+
+    :return: DataFrame of the ZTF queue
     """
     q = Queue(user="NUTELA")
 
     data = q.get_too_queues()["data"]
 
-    df = format_ztf_queue(data)
+    return format_ztf_queue(data)
+
+
+def post_ztf_queue():
+    """
+    Post the queue to Kowalski
+    """
+    df = get_ztf_queue()
     if len(df) > 0:
         send_message(f"ZTF ToO queue:  \n```{tabulate(df, headers=df.columns)} ``` \n")
     else:
