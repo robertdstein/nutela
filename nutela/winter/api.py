@@ -62,10 +62,15 @@ def post_winter_queue():
 
     :return: None
     """
-    queue = get_winter_queue()
+    try:
+        queue = get_winter_queue()
 
-    if len(queue) == 0:
-        send_message("No observations in the Winter queue.")
-        return
+        if len(queue) == 0:
+            send_message("No observations in the Winter queue.")
+            return
 
-    send_message(f"WINTER queue:\n ```{tabulate(queue, headers=queue.columns)}``` \n")
+        send_message(
+            f"WINTER queue:\n ```{tabulate(queue, headers=queue.columns)}``` \n"
+        )
+    except Exception as e:
+        send_message(f"Error retrieving Winter queue: {e}")

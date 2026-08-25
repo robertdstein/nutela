@@ -64,8 +64,13 @@ def post_ztf_queue():
     """
     Post the queue to Kowalski
     """
-    df = get_ztf_queue()
-    if len(df) > 0:
-        send_message(f"ZTF ToO queue:  \n```{tabulate(df, headers=df.columns)} ``` \n")
-    else:
-        send_message("ZTF ToO queue is currently empty.")
+    try:
+        df = get_ztf_queue()
+        if len(df) > 0:
+            send_message(
+                f"ZTF ToO queue:  \n```{tabulate(df, headers=df.columns)} ``` \n"
+            )
+        else:
+            send_message("ZTF ToO queue is currently empty.")
+    except Exception as e:
+        send_message(f"Error fetching ZTF ToO queue: {e}")

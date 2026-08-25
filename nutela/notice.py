@@ -1,3 +1,7 @@
+"""
+Parse IceCube AstroTrack GCN Notices.
+"""
+
 import numpy as np
 from astropy.time import Time
 from pydantic import BaseModel, field_validator
@@ -33,13 +37,25 @@ class AstrotrackNotice(BaseModel):
     @field_validator("src_ra", "src_dec", "sun_postn", "moon_postn", mode="before")
     @classmethod
     def coord_validator(cls, value: str) -> float:
-        v = float(value.split("d")[0])
+        """
+        Parse the coordinate string and convert to float.
+
+        :param value: Coordinate string
+        :return: Float value of the coordinate
+        """
+        v = float(str(value).split("d", maxsplit=1)[0])
         return v
 
     @field_validator("signalness", "energy", "far", mode="before")
     @classmethod
     def float_validator(cls, value: str) -> float:
-        signalness = float(value.split(" ")[0])
+        """
+        Parse the float string and convert to float.
+
+        :param value: Value string
+        :return: Float value
+        """
+        signalness = float(str(value).split(" ", maxsplit=1)[0])
         return signalness
 
     @field_validator("src_error", "src_error50", mode="before")
@@ -51,13 +67,19 @@ class AstrotrackNotice(BaseModel):
         :param value: Source error string
         :return: Degrees
         """
-        src_error = float(value.split(" ")[0]) / 60.0
+        src_error = float(value.split(" ", maxsplit=1)[0]) / 60.0
         return src_error
 
     @field_validator("moon_dist", "sun_dist", mode="before")
     @classmethod
     def distance_validator(cls, value: str) -> float:
-        dist = abs(float(value.split(" ")[0]))
+        """
+        Parse the distance string and convert to float.
+
+        :param value: Distance string
+        :return: Float value
+        """
+        dist = abs(float(str(value).split(" ", maxsplit=1)[0]))
         return dist
 
     @property
